@@ -1,121 +1,278 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import { updateUserProfile } from '../../services/authService';
+import React, { useEffect, useState } from "react";
+import { useAuth } from "../../context/AuthContext";
+import Card from "../../components/common/Card";
+import Input from "../../components/common/Input";
+import Button from "../../components/common/Button";
 
-import Card from '../../components/common/Card';
-import Input from '../../components/common/Input';
-import Button from '../../components/common/Button';
+import {
+  useProfileQuery,
+  useUpdateProfileMutation,
+  useProfileSummaryQuery
+} from "../../tanstack/alltanstack";
+
 
 const Profile = () => {
-  const { user } = useAuth();
+const { setLoggedInUser } = useAuth();
+  // =========================
+  // FORM DATA
+  // =========================
 
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    currency: 'INR',
-    monthlyIncomeTarget: '',
-    savingsGoal: ''
+    name: "",
+    email: "",
+    currency: "INR",
+    monthlyIncomeTarget: "",
+    savingsGoal: ""
   });
 
   const [success, setSuccess] = useState(false);
-  const [loading, setLoading] = useState(false);
 
-  // Load user information
+
+  // =========================
+  // GET PROFILE
+  // =========================
+
+  const {
+    data: profileData,
+    isLoading: profileLoading,
+    isError: profileError,
+    error: profileErrorData
+  } = useProfileQuery();
+
+
+  // =========================
+  // GET PROFILE SUMMARY
+  // =========================
+
+  const {
+    data: summaryData,
+    isLoading: summaryLoading,
+    isError: summaryError
+  } = useProfileSummaryQuery();
+
+
+  // =========================
+  // UPDATE PROFILE
+  // =========================
+
+  const updateProfileMutation =
+    useUpdateProfileMutation();
+
+
+  // =========================
+  // LOAD PROFILE DATA
+  // =========================
+
   useEffect(() => {
-    if (user) {
-      setFormData({
-        name: user.name || '',
-        email: user.email || '',
-        currency: user.currency || 'INR',
-        monthlyIncomeTarget: user.monthlyIncomeTarget || '',
-        savingsGoal: user.savingsGoal || ''
-      });
-    }
-  }, [user]);
 
-  // Handle input changes
+    if (profileData?.profile) {
+
+      const profile = profileData.profile;
+
+      setFormData({
+        name: profile.name || "",
+        email: profile.email || "",
+        currency: profile.currency || "INR",
+
+        monthlyIncomeTarget:
+          profile.monthly_income_target ?? "",
+
+        savingsGoal:
+          profile.savings_goal ?? ""
+      });
+
+    }
+
+  }, [profileData]);
+
+
+  // =========================
+  // HANDLE INPUT CHANGE
+  // =========================
+
   const handleChange = (e) => {
+
     const { name, value } = e.target;
 
-    setFormData({
-      ...formData,
+    setFormData((previousData) => ({
+      ...previousData,
       [name]: value
-    });
+    }));
+
   };
 
-  // Get transactions
-  const transactions = JSON.parse(
-    localStorage.getItem('spendwise_transactions') || '[]'
-  );
 
-  // Calculate total income
-  const totalIncome = transactions
-    .filter((transaction) => transaction.type === 'income')
-    .reduce(
-      (total, transaction) => total + Number(transaction.amount || 0),
-      0
-    );
+  // =========================
+  // UPDATE PROFILE
+  // =========================
 
-  // Calculate total expenses
-  const totalExpenses = transactions
-    .filter((transaction) => transaction.type === 'expense')
-    .reduce(
-      (total, transaction) => total + Number(transaction.amount || 0),
-      0
-    );
+const handleSubmit = async (e) => {
 
-  // Save profile
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    setLoading(true);
+  try {
 
-    const updatedUser = updateUserProfile({
+    await updateProfileMutation.mutateAsync({
+
       name: formData.name,
+
       currency: formData.currency,
-      monthlyIncomeTarget:
-        parseFloat(formData.monthlyIncomeTarget) || 0,
-      savingsGoal:
-        parseFloat(formData.savingsGoal) || 0
+
+      monthly_income_target:
+        Number(formData.monthlyIncomeTarget) || 0,
+
+      savings_goal:
+        Number(formData.savingsGoal) || 0
+
     });
 
-    if (updatedUser) {
-      setSuccess(true);
+    // Update only the changed user information
+    setLoggedInUser({
+      name: formData.name
+    });
 
-      setTimeout(() => {
-        setSuccess(false);
-      }, 3000);
-    }
+    setSuccess(true);
 
-    setLoading(false);
-  };
+    setTimeout(() => {
+      setSuccess(false);
+    }, 3000);
+
+  } catch (error) {
+
+    console.error(
+      "Profile update error:",
+      error
+    );
+
+  }
+
+};
+
+
+  // =========================
+  // LOADING
+  // =========================
+
+  if (profileLoading || summaryLoading) {
+
+    return (
+      <div
+        style={{
+          padding: "40px",
+          textAlign: "center"
+        }}
+      >
+        Loading profile...
+      </div>
+    );
+
+  }
+
+
+  // =========================
+  // PROFILE ERROR
+  // =========================
+
+  if (profileError) {
+
+    return (
+      <div
+        style={{
+          padding: "40px",
+          textAlign: "center",
+          color: "#f44336"
+        }}
+      >
+        Failed to load profile.
+
+        <div style={{ marginTop: "8px" }}>
+          {profileErrorData?.response?.data?.detail ||
+            profileErrorData?.message ||
+            "Something went wrong"}
+        </div>
+      </div>
+    );
+
+  }
+
+
+  // =========================
+  // SUMMARY
+  // =========================
+
+  const summary = summaryData?.summary || {};
+
 
   return (
-    <div>
-      <h2 style={{ marginBottom: '20px' }}>Profile</h2>
 
-      {/* Profile Information */}
+    <div>
+
+      {/* =========================
+          PAGE TITLE
+      ========================= */}
+
+      <h2 style={{ marginBottom: "20px" }}>
+        Profile
+      </h2>
+
+
+      {/* =========================
+          PROFILE INFORMATION
+      ========================= */}
+
       <Card>
-        <h3 style={{ marginBottom: '20px' }}>
+
+        <h3 style={{ marginBottom: "20px" }}>
           Profile Information
         </h3>
 
+
+        {/* SUCCESS MESSAGE */}
+
         {success && (
+
           <div
             style={{
-              padding: '12px 16px',
-              backgroundColor: '#e8f5e9',
-              color: '#2e7d32',
-              borderRadius: '8px',
-              marginBottom: '20px'
+              padding: "12px 16px",
+              backgroundColor: "#e8f5e9",
+              color: "#2e7d32",
+              borderRadius: "8px",
+              marginBottom: "20px"
             }}
           >
             Profile updated successfully!
           </div>
+
         )}
 
+
+        {/* ERROR MESSAGE */}
+
+        {updateProfileMutation.isError && (
+
+          <div
+            style={{
+              padding: "12px 16px",
+              backgroundColor: "#ffebee",
+              color: "#c62828",
+              borderRadius: "8px",
+              marginBottom: "20px"
+            }}
+          >
+            {updateProfileMutation.error?.response?.data?.detail ||
+              updateProfileMutation.error?.message ||
+              "Failed to update profile"}
+          </div>
+
+        )}
+
+
         <form onSubmit={handleSubmit}>
+
+          {/* BASIC INFORMATION */}
+
           <div className="form-row">
+
             <Input
               label="Full Name"
               name="name"
@@ -124,22 +281,33 @@ const Profile = () => {
               required
             />
 
+
             <Input
               label="Email"
               name="email"
               value={formData.email}
               disabled
               style={{
-                background: '#f5f5f5'
+                background: "#f5f5f5"
               }}
             />
+
           </div>
 
-          <h3 style={{ margin: '25px 0 20px' }}>
+
+          {/* FINANCIAL PREFERENCES */}
+
+          <h3
+            style={{
+              margin: "25px 0 20px"
+            }}
+          >
             Financial Preferences
           </h3>
 
+
           <div className="form-row">
+
             <Input
               label="Currency"
               name="currency"
@@ -148,6 +316,7 @@ const Profile = () => {
               placeholder="INR"
               required
             />
+
 
             <Input
               label="Monthly Income Target"
@@ -158,7 +327,9 @@ const Profile = () => {
               placeholder="50000"
               min="0"
             />
+
           </div>
+
 
           <Input
             label="Monthly Savings Goal"
@@ -170,61 +341,163 @@ const Profile = () => {
             min="0"
           />
 
+
+          {/* SAVE BUTTON */}
+
           <Button
             type="submit"
             variant="primary"
-            disabled={loading}
-            style={{ marginTop: '20px' }}
+            disabled={updateProfileMutation.isPending}
+            style={{
+              marginTop: "20px"
+            }}
           >
-            {loading ? 'Saving...' : 'Save Changes'}
+            {updateProfileMutation.isPending
+              ? "Saving..."
+              : "Save Changes"}
           </Button>
+
         </form>
+
       </Card>
 
-      {/* Account Summary */}
-      <Card style={{ marginTop: '20px' }}>
-        <h3 style={{ marginBottom: '20px' }}>
+
+      {/* =========================
+          ACCOUNT SUMMARY
+      ========================= */}
+
+      <Card
+        style={{
+          marginTop: "20px"
+        }}
+      >
+
+        <h3
+          style={{
+            marginBottom: "20px"
+          }}
+        >
           Account Summary
         </h3>
 
-        <div className="form-row">
-          <div>
-            <p><strong>Account Type</strong></p>
-            <p>Personal</p>
-          </div>
 
-          <div>
-            <p><strong>Total Transactions</strong></p>
-            <p>{transactions.length}</p>
-          </div>
-        </div>
+        {/* ACCOUNT TYPE + TRANSACTIONS */}
 
         <div className="form-row">
-          <div>
-            <p><strong>Total Income</strong></p>
-            <p>
-              {formData.currency} {totalIncome.toLocaleString()}
-            </p>
-          </div>
 
           <div>
-            <p><strong>Total Expenses</strong></p>
+
             <p>
-              {formData.currency} {totalExpenses.toLocaleString()}
+              <strong>Account Type</strong>
             </p>
+
+            <p>
+              {summary.account_type || "Personal"}
+            </p>
+
           </div>
+
+
+          <div>
+
+            <p>
+              <strong>Total Transactions</strong>
+            </p>
+
+            <p>
+              {summary.total_transactions || 0}
+            </p>
+
+          </div>
+
         </div>
 
-        <div style={{ marginTop: '15px' }}>
-          <p><strong>Current Balance</strong></p>
+
+        {/* INCOME + EXPENSES */}
+
+        <div className="form-row">
+
+          <div>
+
+            <p>
+              <strong>Total Income</strong>
+            </p>
+
+            <p>
+              {formData.currency}{" "}
+              {Number(
+                summary.total_income || 0
+              ).toLocaleString()}
+            </p>
+
+          </div>
+
+
+          <div>
+
+            <p>
+              <strong>Total Expenses</strong>
+            </p>
+
+            <p>
+              {formData.currency}{" "}
+              {Number(
+                summary.total_expenses || 0
+              ).toLocaleString()}
+            </p>
+
+          </div>
+
+        </div>
+
+
+        {/* CURRENT BALANCE */}
+
+        <div
+          style={{
+            marginTop: "15px"
+          }}
+        >
+
           <p>
-            {formData.currency}{' '}
-            {(totalIncome - totalExpenses).toLocaleString()}
+            <strong>Current Balance</strong>
           </p>
+
+          <p>
+
+            {formData.currency}{" "}
+
+            {Number(
+              summary.current_balance || 0
+            ).toLocaleString()}
+
+          </p>
+
         </div>
+
+
+        {/* SUMMARY ERROR */}
+
+        {summaryError && (
+
+          <div
+            style={{
+              marginTop: "15px",
+              color: "#f44336"
+            }}
+          >
+            Failed to load account summary.
+          </div>
+
+        )}
+
       </Card>
+
     </div>
+
   );
+
 };
+
 
 export default Profile;

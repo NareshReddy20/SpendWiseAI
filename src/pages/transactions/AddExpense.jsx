@@ -4,10 +4,11 @@ import Card from '../../components/common/Card';
 import Input from '../../components/common/Input';
 import Select from '../../components/common/Select';
 import Button from '../../components/common/Button';
-import { addTransaction } from '../../services/transactionService';
+import { useAddExpenseMutation } from '../../tanstack/alltanstack';
 
 const AddExpense = () => {
   const navigate = useNavigate();
+  const { mutateAsync: addExpense, isPending } = useAddExpenseMutation();
   const [formData, setFormData] = useState({
     amount: '',
     description: '',
@@ -44,20 +45,40 @@ const AddExpense = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!validate()) return;
 
-    addTransaction({
-      ...formData,
-      amount: parseFloat(formData.amount),
-      type: 'expense'
-    });
+    try {
+      const expenseData = {
+        amount: parseFloat(formData.amount),
+        description: formData.description,
+        category: formData.category,
+        date: formData.date,
+        payment_method: formData.paymentMethod,
+        notes: formData.notes
+      };
 
-    setSuccess(true);
-    setTimeout(() => {
-      navigate('/transactions');
-    }, 1500);
+      const response = await addExpense(expenseData);
+
+      console.log("Expense added:", response);
+
+      setSuccess(true);
+
+      setTimeout(() => {
+        navigate('/transactions');
+      }, 1500);
+
+    } catch (error) {
+      console.error("Error adding expense:", error);
+
+      setErrors({
+        submit:
+          error.response?.data?.detail ||
+          "Failed to add expense"
+      });
+    }
   };
 
   return (
@@ -135,7 +156,18 @@ const AddExpense = () => {
             />
 
             <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
-              <Button type="submit" variant="primary">Add Expense</Button>
+              {errors.submit && (
+                  <p style={{ color: 'red', marginTop: '10px' }}>
+                    {errors.submit}
+                  </p>
+                )}
+              <Button
+                  type="submit"
+                  variant="primary"
+                  disabled={isPending}
+                >
+                  {isPending ? "Adding..." : "Add Expense"}
+              </Button>
               <Button type="button" variant="secondary" onClick={() => navigate(-1)}>
                 Cancel
               </Button>

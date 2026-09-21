@@ -22,12 +22,13 @@ function App() {
     <Router>
       <AuthProvider>
         <Routes>
+          <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           
           <Route path="/" element={<ProtectedRoute />}>
             <Route element={<Layout />}>
-              <Route index element={<Dashboard />} />
+              
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="transactions" element={<Transactions />} />
               <Route path="add-expense" element={<AddExpense />} />
@@ -41,7 +42,7 @@ function App() {
             </Route>
           </Route>
           
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </AuthProvider>
     </Router>

@@ -26,7 +26,7 @@ const TransactionRow = ({ transaction, onEdit, onDelete, onViewDetails }) => {
         </span>
       </td>
       <td>{formatDate(transaction.date)}</td>
-      <td>{transaction.paymentMethod || 'N/A'}</td>
+      <td>{transaction.payment_method || 'N/A'}</td>
       <td>
         <button 
           onClick={() => onViewDetails(transaction)}

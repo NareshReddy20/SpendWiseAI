@@ -4,10 +4,11 @@ import Card from '../../components/common/Card';
 import Input from '../../components/common/Input';
 import Select from '../../components/common/Select';
 import Button from '../../components/common/Button';
-import { addTransaction } from '../../services/transactionService';
+import { useAddIncomeMutation } from '../../tanstack/alltanstack';
 
 const AddIncome = () => {
   const navigate = useNavigate();
+  const {mutateAsync: addIncome,isPending} = useAddIncomeMutation();
   const [formData, setFormData] = useState({
     amount: '',
     description: '',
@@ -44,21 +45,41 @@ const AddIncome = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!validate()) return;
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    addTransaction({
-      ...formData,
+  if (!validate()) return;
+
+  try {
+    const incomeData = {
       amount: parseFloat(formData.amount),
-      type: 'income'
-    });
+      description: formData.description,
+      category: formData.category,
+      date: formData.date,
+      payment_method: formData.paymentMethod,
+      notes: formData.notes
+    };
+
+    const response = await addIncome(incomeData);
+
+    console.log("Income added successfully:", response);
 
     setSuccess(true);
+
     setTimeout(() => {
       navigate('/transactions');
     }, 1500);
-  };
+
+  } catch (error) {
+    console.error("Error adding income:", error);
+
+    setErrors({
+      submit:
+        error.response?.data?.detail ||
+        "Failed to add income"
+    });
+  }
+};
 
   return (
     <div>
@@ -135,7 +156,13 @@ const AddIncome = () => {
             />
 
             <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
-              <Button type="submit" variant="success">Add Income</Button>
+              <Button
+                type="submit"
+                variant="success"
+                disabled={isPending}
+              >
+                {isPending ? "Adding..." : "Add Income"}
+              </Button>
               <Button type="button" variant="secondary" onClick={() => navigate(-1)}>
                 Cancel
               </Button>
