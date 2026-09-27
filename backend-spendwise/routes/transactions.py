@@ -40,7 +40,10 @@ def get_transactions(
             db.query(Transaction, Category.name.label("category_name"))
             .join(Category, Transaction.category_id == Category.id)
             .filter(Transaction.user_id == user_id)
-            .order_by(Transaction.date.desc())
+            .order_by(
+                Transaction.date.desc(),
+                Transaction.id.desc()
+            )
             .offset(offset)
             .limit(limit)
             .all()
@@ -132,7 +135,7 @@ def filter_transactions(
 
         transactions = (
             transaction_query
-            .order_by(Transaction.date.desc())
+            .order_by(Transaction.date.desc(),Transaction.id.desc())
             .offset(offset)
             .limit(limit)
             .all()

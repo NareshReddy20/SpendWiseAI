@@ -26,3 +26,8 @@ class User(Base):
     ai_results = relationship("TransactionAIResult", back_populates="user", cascade="all, delete-orphan")
     chat_history = relationship("AIChatHistory", back_populates="user", cascade="all, delete-orphan")
     insights = relationship("UserInsight", back_populates="user", cascade="all, delete-orphan")
+    insight_generations = relationship(
+    "AIInsightGeneration",
+    back_populates="user",
+    cascade="all, delete-orphan"
+)

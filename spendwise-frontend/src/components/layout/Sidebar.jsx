@@ -22,7 +22,7 @@ const Sidebar = ({ isOpen, onClose }) => {
     { path: '/budgets', icon: <FaWallet />, label: 'Budgets' },
     { path: '/ai-insights', icon: <FaRobot />, label: 'AI Insights' },
     { path: '/ai-parser', icon: <FaBrain />, label: 'AI Parser' },
-    { path: '/ai-chat', icon: <FaMicrophone />, label: 'AI Chat' },
+    // { path: '/ai-chat', icon: <FaMicrophone />, label: 'AI Chat' },
     { path: '/reports', icon: <FaFileAlt />, label: 'Reports' },
     { path: '/profile', icon: <FaUser />, label: 'Profile' },
   ];

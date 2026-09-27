@@ -1,67 +1,110 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import Input from '../../components/common/Input';
-import Button from '../../components/common/Button';
+
+import React, { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import Input from "../../components/common/Input";
+import Button from "../../components/common/Button";
 
 const Register = () => {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
   const { register } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
 
+    // Frontend validation
     if (!name || !email || !password || !confirmPassword) {
-      setError('Please fill in all fields');
+      setError("Please fill in all fields");
       return;
     }
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError("Passwords do not match");
       return;
     }
 
     if (password.length < 6) {
-      setError('Password must be at least 6 characters');
+      setError("Password must be at least 6 characters");
       return;
     }
 
-    setLoading(true);
-    const result = register(name, email, password);
-    if (result.success) {
-      navigate('/dashboard');
-    } else {
-      setError(result.error);
+    try {
+      setLoading(true);
+
+      // Call register function from AuthContext
+      await register({
+        name: name.trim(),
+        email: email.trim(),
+        password,
+      });
+
+      // Registration successful
+      navigate("/dashboard");
+    } catch (error) {
+      // Get backend error message
+      const message =
+        error.response?.data?.detail ||
+        error.message ||
+        "Registration failed";
+
+      setError(message);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
-    <div style={{ 
-      minHeight: '100vh', 
-      display: 'flex', 
-      alignItems: 'center', 
-      justifyContent: 'center',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-    }}>
-      <div style={{ 
-        background: 'white', 
-        padding: '40px', 
-        borderRadius: '16px',
-        width: '100%',
-        maxWidth: '400px',
-        boxShadow: '0 10px 40px rgba(0,0,0,0.1)'
-      }}>
-        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <h1 style={{ fontSize: '28px', color: '#333' }}>💰 SpendWise AI</h1>
-          <p style={{ color: '#666', marginTop: '8px' }}>Create your account</p>
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background:
+          "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+      }}
+    >
+      <div
+        style={{
+          background: "white",
+          padding: "40px",
+          borderRadius: "16px",
+          width: "100%",
+          maxWidth: "400px",
+          boxShadow: "0 10px 40px rgba(0,0,0,0.1)",
+        }}
+      >
+        <div
+          style={{
+            textAlign: "center",
+            marginBottom: "32px",
+          }}
+        >
+          <h1
+            style={{
+              fontSize: "28px",
+              color: "#333",
+            }}
+          >
+            💰 SpendWise AI
+          </h1>
+
+          <p
+            style={{
+              color: "#666",
+              marginTop: "8px",
+            }}
+          >
+            Create your account
+          </p>
         </div>
 
         <form onSubmit={handleSubmit}>
@@ -102,28 +145,43 @@ const Register = () => {
           />
 
           {error && (
-            <div style={{ 
-              color: '#f44336', 
-              fontSize: '14px', 
-              marginBottom: '16px',
-              textAlign: 'center'
-            }}>
+            <div
+              style={{
+                color: "#f44336",
+                fontSize: "14px",
+                marginBottom: "16px",
+                textAlign: "center",
+              }}
+            >
               {error}
             </div>
           )}
 
-          <Button type="submit" variant="primary" disabled={loading} style={{ width: '100%' }}>
-            {loading ? 'Creating account...' : 'Create Account'}
+          <Button
+            type="submit"
+            variant="primary"
+            disabled={loading}
+            style={{ width: "100%" }}
+          >
+            {loading ? "Creating account..." : "Create Account"}
           </Button>
         </form>
 
-        <div style={{ 
-          marginTop: '20px', 
-          textAlign: 'center',
-          color: '#666'
-        }}>
-          Already have an account?{' '}
-          <Link to="/login" style={{ color: '#667eea', fontWeight: '500' }}>
+        <div
+          style={{
+            marginTop: "20px",
+            textAlign: "center",
+            color: "#666",
+          }}
+        >
+          Already have an account?{" "}
+          <Link
+            to="/login"
+            style={{
+              color: "#667eea",
+              fontWeight: "500",
+            }}
+          >
             Sign In
           </Link>
         </div>
@@ -133,3 +191,4 @@ const Register = () => {
 };
 
 export default Register;
+

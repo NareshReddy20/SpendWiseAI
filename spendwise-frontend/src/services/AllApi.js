@@ -38,6 +38,16 @@ export const loginAPI = async (data) => {
 };
 
 
+// REGISTER
+export const registerAPI = async (data) => {
+  const response = await API.post(
+    "/auth/register",
+    data
+  );
+
+  return response.data;
+};
+
 export const getDashboardAPI = async () => {
 
   const response = await API.get(
@@ -223,10 +233,6 @@ export const deleteTransactionAPI = async (
   return response.data;
 };
 
-export const getAIInsightsAPI = async () => {
-  const response = await api.get("/ai/insights");
-  return response.data;
-};
 
 export const parseAITransaction = async (data) => {
   const response = await api.post("/ai/parse-expense", data);
@@ -235,6 +241,33 @@ export const parseAITransaction = async (data) => {
 
 export const confirmAITransaction = async (data) => {
   const response = await api.post("/ai/confirm-expense", data);
+  return response.data;
+};
+
+// ===============================
+// GET SAVED AI INSIGHTS
+// ===============================
+
+export const getAIInsightsAPI = async () => {
+
+  const response = await API.get(
+    "/ai/insights"
+  );
+
+  return response.data;
+};
+
+
+// ===============================
+// GENERATE AI INSIGHTS
+// ===============================
+
+export const generateAIInsightsAPI = async () => {
+
+  const response = await API.post(
+    "/ai/insights/generate"
+  );
+
   return response.data;
 };
 

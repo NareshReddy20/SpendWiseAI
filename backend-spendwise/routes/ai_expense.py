@@ -22,6 +22,10 @@ router = APIRouter(
 )
 
 
+# =========================================================
+# PARSE TRANSACTION
+# =========================================================
+
 @router.post(
     "/parse-expense",
     response_model=AIExpenseParseResponse
@@ -68,8 +72,13 @@ def parse_expense(
 
         raise HTTPException(
             status_code=500,
-            detail="Error parsing transaction"
+            detail="Error parsing transaction."
         )
+
+
+# =========================================================
+# CONFIRM TRANSACTION
+# =========================================================
 
 @router.post(
     "/confirm-expense",
@@ -80,7 +89,9 @@ def confirm_expense(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user)
 ):
+
     try:
+
         service = AIExpenseParserService(db)
 
         transaction = service.confirm_transaction(
@@ -89,7 +100,7 @@ def confirm_expense(
             category=request.category,
             description=request.description,
             transaction_date=request.date,
-            payment_method=request.payment_method or "Other",
+            payment_method=request.payment_method,
             transaction_type=request.transaction_type
         )
 
@@ -99,15 +110,20 @@ def confirm_expense(
         }
 
     except ValueError as e:
+
         raise HTTPException(
             status_code=400,
             detail=str(e)
         )
 
     except Exception as e:
-        print("Error in confirm_expense:", str(e))
+
+        print(
+            "Error in confirm_expense:",
+            str(e)
+        )
 
         raise HTTPException(
             status_code=500,
-            detail="Error saving transaction"
+            detail="Error saving transaction."
         )

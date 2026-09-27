@@ -14,6 +14,7 @@ from core.database import Base
 
 
 class UserInsight(Base):
+
     __tablename__ = "user_insights"
 
     id = Column(
@@ -25,7 +26,19 @@ class UserInsight(Base):
 
     user_id = Column(
         Integer,
-        ForeignKey("users.id", ondelete="CASCADE"),
+        ForeignKey(
+            "users.id",
+            ondelete="CASCADE"
+        ),
+        nullable=False
+    )
+
+    generation_id = Column(
+        Integer,
+        ForeignKey(
+            "ai_insight_generations.id",
+            ondelete="CASCADE"
+        ),
         nullable=False
     )
 
@@ -34,8 +47,18 @@ class UserInsight(Base):
         nullable=False
     )
 
+    title = Column(
+        String(255),
+        nullable=False
+    )
+
     message = Column(
         Text,
+        nullable=False
+    )
+
+    source = Column(
+        String(20),
         nullable=False
     )
 
@@ -46,5 +69,10 @@ class UserInsight(Base):
 
     user = relationship(
         "User",
+        back_populates="insights"
+    )
+
+    generation = relationship(
+        "AIInsightGeneration",
         back_populates="insights"
     )

@@ -9,7 +9,7 @@ import {
   getCurrentUser,
   logoutUser
 } from "../services/authService";
-
+import { useRegisterMutation } from "../tanstack/alltanstack";
 
 const AuthContext = createContext();
 
@@ -30,7 +30,8 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
 
   const [loading, setLoading] = useState(true);
-
+ 
+  const registerMutation = useRegisterMutation();
 
   useEffect(() => {
 
@@ -43,6 +44,12 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
 
   }, []);
+
+  const register = async (userData) => {
+    const response = await registerMutation.mutateAsync(userData);
+
+    return response;
+  };
 
 
   // Update existing user data
@@ -68,6 +75,7 @@ export const AuthProvider = ({ children }) => {
   const value = {
     user,
     loading,
+    register,
     setLoggedInUser,
     logout,
     isAuthenticated: !!user

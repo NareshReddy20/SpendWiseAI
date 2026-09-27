@@ -2,151 +2,198 @@ import React, { useState } from 'react';
 import TransactionRow from './TransactionRow';
 import EmptyState from '../common/EmptyState';
 
-const TransactionTable = ({ 
-  transactions, 
-  onEdit, 
-  onDelete, 
-  onViewDetails 
+const TransactionTable = ({
+  transactions,
+  onEdit,
+  onDelete,
+  onViewDetails
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
-  const [sortField, setSortField] = useState('date');
-  const [sortDirection, setSortDirection] = useState('desc');
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
 
-  const categories = ['Food', 'Transport', 'Shopping', 'Bills', 'Entertainment', 'Healthcare', 'Education', 'Other'];
+  const categories = [
+    'Food',
+    'Transport',
+    'Shopping',
+    'Bills',
+    'Entertainment',
+    'Healthcare',
+    'Education',
+    'Other'
+  ];
 
-  // Filter transactions
-  const filteredTransactions = transactions.filter(t => {
-    const matchesSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = !categoryFilter || t.category === categoryFilter;
-    const matchesType = !typeFilter || t.type === typeFilter;
-    return matchesSearch && matchesCategory && matchesType;
-  });
+  const filteredTransactions = transactions.filter(
+    (transaction) => {
+      const description =
+        transaction.description?.toLowerCase() || '';
 
-  // Sort transactions
-  const sortedTransactions = [...filteredTransactions].sort((a, b) => {
-    let aVal = a[sortField];
-    let bVal = b[sortField];
-    
-    if (sortField === 'amount') {
-      aVal = parseFloat(aVal);
-      bVal = parseFloat(bVal);
+      const search =
+        searchTerm.toLowerCase().trim();
+
+      const matchesSearch =
+        description.includes(search);
+
+      const matchesCategory =
+        !categoryFilter ||
+        transaction.category === categoryFilter;
+
+      const matchesType =
+        !typeFilter ||
+        transaction.type === typeFilter;
+
+      return (
+        matchesSearch &&
+        matchesCategory &&
+        matchesType
+      );
     }
-    
-    if (sortField === 'date') {
-      aVal = new Date(aVal);
-      bVal = new Date(bVal);
-    }
-    
-    if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
-    if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
-    return 0;
-  });
-
-  // Pagination
-  const totalPages = Math.ceil(sortedTransactions.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedTransactions = sortedTransactions.slice(startIndex, startIndex + itemsPerPage);
-
-  const handleSort = (field) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortDirection('asc');
-    }
-  };
+  );
 
   if (transactions.length === 0) {
-    return <EmptyState message="No transactions yet" icon="💰" />;
+    return (
+      <EmptyState
+        message="No transactions yet"
+        icon="💰"
+      />
+    );
   }
 
   return (
     <div>
-      <div className="filter-bar">
+      <div
+        className="filter-bar"
+        style={{
+          display: 'grid',
+          gridTemplateColumns:
+            'minmax(200px, 2fr) minmax(150px, 1fr) minmax(150px, 1fr)',
+          gap: '12px',
+          marginBottom: '16px'
+        }}
+      >
         <input
           type="text"
           placeholder="Search transactions..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={(e) =>
+            setSearchTerm(e.target.value)
+          }
           className="form-control"
         />
+
         <select
           value={categoryFilter}
-          onChange={(e) => setCategoryFilter(e.target.value)}
+          onChange={(e) =>
+            setCategoryFilter(e.target.value)
+          }
           className="form-control"
         >
-          <option value="">All Categories</option>
-          {categories.map(cat => (
-            <option key={cat} value={cat}>{cat}</option>
+          <option value="">
+            All Categories
+          </option>
+
+          {categories.map((category) => (
+            <option
+              key={category}
+              value={category}
+            >
+              {category}
+            </option>
           ))}
         </select>
+
         <select
           value={typeFilter}
-          onChange={(e) => setTypeFilter(e.target.value)}
+          onChange={(e) =>
+            setTypeFilter(e.target.value)
+          }
           className="form-control"
         >
-          <option value="">All Types</option>
-          <option value="income">Income</option>
-          <option value="expense">Expense</option>
+          <option value="">
+            All Types
+          </option>
+
+          <option value="income">
+            Income
+          </option>
+
+          <option value="expense">
+            Expense
+          </option>
         </select>
       </div>
 
-      <div className="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th onClick={() => handleSort('id')}>ID</th>
-              <th onClick={() => handleSort('description')}>Description</th>
-              <th onClick={() => handleSort('amount')}>Amount</th>
-              <th onClick={() => handleSort('category')}>Category</th>
-              <th onClick={() => handleSort('type')}>Type</th>
-              <th onClick={() => handleSort('date')}>Date</th>
-              <th>Payment Method</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {paginatedTransactions.map(transaction => (
-              <TransactionRow
-                key={transaction.id}
-                transaction={transaction}
-                onEdit={onEdit}
-                onDelete={onDelete}
-                onViewDetails={onViewDetails}
-              />
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {filteredTransactions.length === 0 ? (
+        <EmptyState
+          message="No transactions match your filters"
+          icon="🔍"
+        />
+      ) : (
+        <div
+          className="table-container"
+          style={{
+            width: '100%',
+            overflowX: 'auto'
+          }}
+        >
+          <table
+            style={{
+              width: '100%',
+              minWidth: '950px',
+              tableLayout: 'fixed',
+              borderCollapse: 'collapse'
+            }}
+          >
+            <thead>
+              <tr>
+                <th style={{ width: '60px' }}>
+                  ID
+                </th>
 
-      {totalPages > 1 && (
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          gap: '8px', 
-          marginTop: '16px' 
-        }}>
-          <button
-            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-            disabled={currentPage === 1}
-            className="btn btn-secondary btn-sm"
-          >
-            Previous
-          </button>
-          <span style={{ display: 'flex', alignItems: 'center' }}>
-            Page {currentPage} of {totalPages}
-          </span>
-          <button
-            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-            disabled={currentPage === totalPages}
-            className="btn btn-secondary btn-sm"
-          >
-            Next
-          </button>
+                <th style={{ width: '25%' }}>
+                  Description
+                </th>
+
+                <th style={{ width: '110px' }}>
+                  Amount
+                </th>
+
+                <th style={{ width: '120px' }}>
+                  Category
+                </th>
+
+                <th style={{ width: '100px' }}>
+                  Type
+                </th>
+
+                <th style={{ width: '120px' }}>
+                  Date
+                </th>
+
+                <th style={{ width: '130px' }}>
+                  Payment Method
+                </th>
+
+                <th style={{ width: '130px' }}>
+                  Actions
+                </th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {filteredTransactions.map(
+                (transaction) => (
+                  <TransactionRow
+                    key={transaction.id}
+                    transaction={transaction}
+                    onEdit={onEdit}
+                    onDelete={onDelete}
+                    onViewDetails={onViewDetails}
+                  />
+                )
+              )}
+            </tbody>
+          </table>
         </div>
       )}
     </div>

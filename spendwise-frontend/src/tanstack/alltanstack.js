@@ -6,6 +6,7 @@ import {
 
 import {
   loginAPI,
+  registerAPI,
   getDashboardAPI,
   addExpenseAPI,
   addIncomeAPI,
@@ -22,6 +23,7 @@ import {
   updateTransactionAPI,
   deleteTransactionAPI,
   getAIInsightsAPI,
+  generateAIInsightsAPI,
   parseAITransaction,
   confirmAITransaction
 } from "../services/AllApi";
@@ -32,11 +34,20 @@ import {
 // ===============================
 
 export const useLoginMutation = () => {
-
   return useMutation({
-    mutationFn: loginAPI,
+    mutationFn: loginAPI
   });
+};
 
+
+// ===============================
+// REGISTER
+// ===============================
+
+export const useRegisterMutation = () => {
+  return useMutation({
+    mutationFn: registerAPI
+  });
 };
 
 
@@ -45,33 +56,77 @@ export const useLoginMutation = () => {
 // ===============================
 
 export const useDashboardQuery = () => {
-
   return useQuery({
     queryKey: ["dashboard"],
-    queryFn: getDashboardAPI,
+    queryFn: getDashboardAPI
   });
-
 };
+
 
 // ===============================
 // ADD EXPENSE
 // ===============================
 
 export const useAddExpenseMutation = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: addExpenseAPI,
+
+    onSuccess: () => {
+
+      // Update dashboard numbers
+      queryClient.invalidateQueries({
+        queryKey: ["dashboard"]
+      });
+
+      // Update transaction list
+      queryClient.invalidateQueries({
+        queryKey: ["transactions"]
+      });
+
+      // Update financial numbers on AI Insights page.
+      // GET /ai/insights only reads saved AI insights.
+      // It does NOT generate Gemini insights.
+      queryClient.invalidateQueries({
+        queryKey: ["ai-insights"]
+      });
+    }
   });
 };
+
 
 // ===============================
 // ADD INCOME
 // ===============================
 
 export const useAddIncomeMutation = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: addIncomeAPI,
+
+    onSuccess: () => {
+
+      // Update dashboard numbers
+      queryClient.invalidateQueries({
+        queryKey: ["dashboard"]
+      });
+
+      // Update transaction list
+      queryClient.invalidateQueries({
+        queryKey: ["transactions"]
+      });
+
+      // Update financial numbers on AI Insights page.
+      // GET /ai/insights does NOT generate AI.
+      queryClient.invalidateQueries({
+        queryKey: ["ai-insights"]
+      });
+    }
   });
 };
+
 
 // ===============================
 // TRANSACTIONS
@@ -80,9 +135,13 @@ export const useAddIncomeMutation = () => {
 export const useTransactionsQuery = (page, limit) => {
   return useQuery({
     queryKey: ["transactions", page, limit],
-    queryFn: () => getTransactionsAPI({ page, limit })
+    queryFn: () => getTransactionsAPI({
+      page,
+      limit
+    })
   });
 };
+
 
 // ===============================
 // FILTER TRANSACTIONS
@@ -94,6 +153,7 @@ export const useFilterTransactionsMutation = () => {
   });
 };
 
+
 // ===============================
 // GET BUDGETS
 // ===============================
@@ -101,7 +161,7 @@ export const useFilterTransactionsMutation = () => {
 export const useBudgetsQuery = () => {
   return useQuery({
     queryKey: ["budgets"],
-    queryFn: getBudgetsAPI,
+    queryFn: getBudgetsAPI
   });
 };
 
@@ -111,8 +171,26 @@ export const useBudgetsQuery = () => {
 // ===============================
 
 export const useAddBudgetMutation = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: addBudgetAPI,
+
+    onSuccess: () => {
+
+      queryClient.invalidateQueries({
+        queryKey: ["budgets"]
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: ["dashboard"]
+      });
+
+      // Budget information is part of financial analysis
+      queryClient.invalidateQueries({
+        queryKey: ["ai-insights"]
+      });
+    }
   });
 };
 
@@ -122,8 +200,25 @@ export const useAddBudgetMutation = () => {
 // ===============================
 
 export const useUpdateBudgetMutation = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: updateBudgetAPI,
+
+    onSuccess: () => {
+
+      queryClient.invalidateQueries({
+        queryKey: ["budgets"]
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: ["dashboard"]
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: ["ai-insights"]
+      });
+    }
   });
 };
 
@@ -133,21 +228,43 @@ export const useUpdateBudgetMutation = () => {
 // ===============================
 
 export const useDeleteBudgetMutation = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: deleteBudgetAPI,
+
+    onSuccess: () => {
+
+      queryClient.invalidateQueries({
+        queryKey: ["budgets"]
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: ["dashboard"]
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: ["ai-insights"]
+      });
+    }
   });
 };
+
+
+// ===============================
+// REPORT
+// ===============================
 
 export const useReportMutation = () => {
   return useMutation({
-    mutationFn: getReportAPI,
+    mutationFn: getReportAPI
   });
 };
 
 
-// =========================
+// ===============================
 // PROFILE
-// =========================
+// ===============================
 
 export const useProfileQuery = () => {
   return useQuery({
@@ -157,20 +274,32 @@ export const useProfileQuery = () => {
 };
 
 
-// =========================
+// ===============================
 // UPDATE PROFILE
-// =========================
+// ===============================
 
 export const useUpdateProfileMutation = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
-    mutationFn: updateProfileAPI
+    mutationFn: updateProfileAPI,
+
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["profile"]
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: ["profile-summary"]
+      });
+    }
   });
 };
 
 
-// =========================
+// ===============================
 // PROFILE SUMMARY
-// =========================
+// ===============================
 
 export const useProfileSummaryQuery = () => {
   return useQuery({
@@ -179,16 +308,15 @@ export const useProfileSummaryQuery = () => {
   });
 };
 
-// =========================
+
+// ===============================
 // UPDATE TRANSACTION
-// =========================
+// ===============================
 
 export const useUpdateTransactionMutation = () => {
-
   const queryClient = useQueryClient();
 
   return useMutation({
-
     mutationFn: updateTransactionAPI,
 
     onSuccess: () => {
@@ -197,22 +325,28 @@ export const useUpdateTransactionMutation = () => {
         queryKey: ["transactions"]
       });
 
-    }
+      queryClient.invalidateQueries({
+        queryKey: ["dashboard"]
+      });
 
+      // Refresh financial numbers only.
+      // Saved AI insights are NOT regenerated.
+      queryClient.invalidateQueries({
+        queryKey: ["ai-insights"]
+      });
+    }
   });
 };
 
 
-// =========================
+// ===============================
 // DELETE TRANSACTION
-// =========================
+// ===============================
 
 export const useDeleteTransactionMutation = () => {
-
   const queryClient = useQueryClient();
 
   return useMutation({
-
     mutationFn: deleteTransactionAPI,
 
     onSuccess: () => {
@@ -221,26 +355,87 @@ export const useDeleteTransactionMutation = () => {
         queryKey: ["transactions"]
       });
 
+      queryClient.invalidateQueries({
+        queryKey: ["dashboard"]
+      });
+
+      // Refresh financial numbers only.
+      queryClient.invalidateQueries({
+        queryKey: ["ai-insights"]
+      });
     }
-
   });
 };
 
-export const useAIInsights = () => {
-  return useQuery({
-    queryKey: ["aiInsights"],
-    queryFn: getAIInsightsAPI,
-  });
-};
+
+// ===============================
+// AI TRANSACTION PARSER
+// ===============================
 
 export const useParseAITransaction = () => {
   return useMutation({
-    mutationFn: parseAITransaction,
+    mutationFn: parseAITransaction
   });
 };
 
+
+// ===============================
+// CONFIRM AI TRANSACTION
+// ===============================
+
 export const useConfirmAITransaction = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: confirmAITransaction,
+
+    onSuccess: () => {
+
+      queryClient.invalidateQueries({
+        queryKey: ["transactions"]
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: ["dashboard"]
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: ["ai-insights"]
+      });
+    }
+  });
+};
+
+
+// ===============================
+// AI FINANCIAL INSIGHTS
+// ===============================
+
+export const useAIInsights = () => {
+  return useQuery({
+    queryKey: ["ai-insights"],
+    queryFn: getAIInsightsAPI
+  });
+};
+
+
+// ===============================
+// GENERATE AI INSIGHTS
+// ===============================
+
+export const useGenerateAIInsightsMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: generateAIInsightsAPI,
+
+    onSuccess: () => {
+
+      // After generation, fetch the newly saved insights
+      // and updated financial numbers.
+      queryClient.invalidateQueries({
+        queryKey: ["ai-insights"]
+      });
+    }
   });
 };

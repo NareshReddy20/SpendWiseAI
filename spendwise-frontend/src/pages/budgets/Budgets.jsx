@@ -221,7 +221,8 @@ const Budgets = () => {
 
     e.preventDefault();
 
-
+    console.log('Form data:', formData);
+    console.log('Category:', formData.category);
     if (!validate()) {
       return;
     }
@@ -490,6 +491,7 @@ const Budgets = () => {
             name="category"
             value={formData.category}
             onChange={handleChange}
+            placeholder="Select a category"
             options={categories.map((category) => ({
               value: category,
               label: category

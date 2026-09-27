@@ -14,16 +14,17 @@ class FinancialAnalysisService:
     def __init__(self, db: Session):
         self.db = db
 
-    def get_monthly_financial_data(self, user_id: int):
+    def get_financial_data(self, user_id: int):
 
         today = date.today()
-
         year = today.year
         month = today.month
 
-        # =====================================
-        # TOTAL INCOME
-        # =====================================
+        # ==================================================
+        # 1. TOTAL INCOME
+        # ==================================================
+        # Same logic as Dashboard.
+        # Includes all income transactions.
 
         total_income = (
             self.db.query(
@@ -34,22 +35,16 @@ class FinancialAnalysisService:
             )
             .filter(
                 Transaction.user_id == user_id,
-                Transaction.type == "income",
-                func.extract(
-                    "year",
-                    Transaction.date
-                ) == year,
-                func.extract(
-                    "month",
-                    Transaction.date
-                ) == month
+                Transaction.type == "income"
             )
             .scalar()
         )
-
-        # =====================================
-        # TOTAL EXPENSES
-        # =====================================
+        
+        # ==================================================
+        # 2. TOTAL EXPENSE
+        # ==================================================
+        # Same logic as Dashboard.
+        # Includes all expense transactions.
 
         total_expense = (
             self.db.query(
@@ -60,45 +55,28 @@ class FinancialAnalysisService:
             )
             .filter(
                 Transaction.user_id == user_id,
-                Transaction.type == "expense",
-                func.extract(
-                    "year",
-                    Transaction.date
-                ) == year,
-                func.extract(
-                    "month",
-                    Transaction.date
-                ) == month
+                Transaction.type == "expense"
             )
             .scalar()
         )
-
-        # =====================================
-        # SAVINGS
-        # =====================================
-
+       
         total_income = Decimal(str(total_income))
         total_expense = Decimal(str(total_expense))
 
         savings = total_income - total_expense
 
-        # =====================================
-        # SAVINGS PERCENTAGE
-        # =====================================
-
         if total_income > 0:
-
             savings_percentage = (
                 savings / total_income
             ) * Decimal("100")
-
         else:
-
             savings_percentage = Decimal("0")
 
-        # =====================================
-        # EXPENSE BY CATEGORY
-        # =====================================
+        # ==================================================
+        # 3. CATEGORY SPENDING
+        # ==================================================
+        # Same logic as Dashboard.
+        # Includes all expense transactions.
 
         category_data = (
             self.db.query(
@@ -113,15 +91,7 @@ class FinancialAnalysisService:
             )
             .filter(
                 Transaction.user_id == user_id,
-                Transaction.type == "expense",
-                func.extract(
-                    "year",
-                    Transaction.date
-                ) == year,
-                func.extract(
-                    "month",
-                    Transaction.date
-                ) == month
+                Transaction.type == "expense"
             )
             .group_by(Category.name)
             .order_by(
@@ -132,144 +102,25 @@ class FinancialAnalysisService:
             .all()
         )
 
-        return {
-            "year": year,
-            "month": month,
-            "total_income": total_income,
-            "total_expense": total_expense,
-            "savings": savings,
-            "savings_percentage": savings_percentage,
-            "category_data": category_data
-        }
+        category_spending = []
 
-    # =========================================
-    # RULE-BASED AI INSIGHTS
-    # =========================================
+        for category_name, amount in category_data:
 
-    def generate_rule_based_insights(
-        self,
-        user_id: int
-    ):
-
-        data = self.get_monthly_financial_data(
-            user_id
-        )
-
-        total_income = data["total_income"]
-        total_expense = data["total_expense"]
-        savings = data["savings"]
-        savings_percentage = data["savings_percentage"]
-        category_data = data["category_data"]
-
-        insights = []
-
-        # =====================================
-        # 1. HIGHEST SPENDING CATEGORY
-        # =====================================
-
-        if len(category_data) >= 1:
-
-            highest_category = category_data[0]
-
-            category_name = highest_category[0]
-            amount = highest_category[1]
-
-            insights.append({
-                "type": "highest_spending",
+            category_spending.append({
                 "category": category_name,
-                "amount": float(amount),
-                "message": (
-                    f"{category_name} is your highest "
-                    f"spending category at "
-                    f"₹{amount:,.2f}."
-                )
+                "amount": float(amount)
             })
 
-        # =====================================
-        # 2. SECOND HIGHEST CATEGORY
-        # =====================================
-
-        if len(category_data) >= 2:
-
-            second_category = category_data[1]
-
-            category_name = second_category[0]
-            amount = second_category[1]
-
-            insights.append({
-                "type": "second_highest_spending",
-                "category": category_name,
-                "amount": float(amount),
-                "message": (
-                    f"{category_name} is your "
-                    f"second-highest expense category "
-                    f"at ₹{amount:,.2f}."
-                )
-            })
-
-        # =====================================
-        # 3. SAVINGS INSIGHT
-        # =====================================
-
-        if total_income > 0:
-
-            if savings > 0:
-
-                insights.append({
-                    "type": "savings",
-                    "amount": float(savings),
-                    "percentage": float(
-                        savings_percentage
-                    ),
-                    "message": (
-                        f"Great job! You're saving "
-                        f"{savings_percentage:.0f}% "
-                        f"of your income."
-                    )}
-                )
-
-            elif savings == 0:
-
-                insights.append({
-                    "type": "no_savings",
-                    "amount": 0,
-                    "percentage": 0,
-                    "message": (
-                        "Your income and expenses are "
-                        "equal this month. Try to save "
-                        "a portion of your income."
-                    )
-                })
-
-            else:
-
-                insights.append({
-                    "type": "overspending",
-                    "amount": float(
-                        abs(savings)
-                    ),
-                    "percentage": float(
-                        savings_percentage
-                    ),
-                    "message": (
-                        f"Your expenses are higher than "
-                        f"your income by "
-                        f"₹{abs(savings):,.2f} this month."
-                    )
-                })
-
-        # =====================================
-        # 4. BUDGET INSIGHTS
-        # =====================================
-
-        today = date.today()
+        # ==================================================
+        # 4. BUDGET DATA
+        # ==================================================
+        # Budgets remain monthly because budgets belong
+        # to a specific year and month.
 
         budgets = (
             self.db.query(
                 Budget,
-                Category.name.label(
-                    "category_name"
-                )
+                Category.name
             )
             .join(
                 Category,
@@ -277,11 +128,13 @@ class FinancialAnalysisService:
             )
             .filter(
                 Budget.user_id == user_id,
-                Budget.year == today.year,
-                Budget.month == today.month
+                Budget.year == year,
+                Budget.month == month
             )
             .all()
         )
+
+        budget_data = []
 
         for budget, category_name in budgets:
 
@@ -299,106 +152,152 @@ class FinancialAnalysisService:
                     Transaction.category_id
                     == budget.category_id,
                     Transaction.type == "expense",
+
+                    # Budget spending is still
+                    # calculated for the current month.
                     func.extract(
                         "year",
                         Transaction.date
-                    ) == today.year,
+                    ) == year,
+
                     func.extract(
                         "month",
                         Transaction.date
-                    ) == today.month
+                    ) == month
                 )
                 .scalar()
             )
 
             spent = Decimal(str(spent))
+
             limit = Decimal(
                 str(budget.monthly_limit)
             )
 
-            if limit > 0:
-
-                percentage = (
-                    spent / limit
-                ) * Decimal("100")
-
-                # Budget exceeded
-                if percentage > 100:
-
-                    exceeded_amount = (
-                        spent - limit
-                    )
-
-                    insights.append({
-                        "type": "budget_exceeded",
-                        "category": category_name,
-                        "amount": float(
-                            exceeded_amount
-                        ),
-                        "message": (
-                            f"You've exceeded your "
-                            f"{category_name} budget by "
-                            f"₹{exceeded_amount:,.2f}."
-                        )}
-                    )
-
-                # Budget almost exceeded
-                elif percentage >= 80:
-
-                    remaining = limit - spent
-
-                    insights.append({
-                        "type": "budget_warning",
-                        "category": category_name,
-                        "amount": float(
-                            remaining
-                        ),
-                        "message": (
-                            f"You're using "
-                            f"{percentage:.0f}% of your "
-                            f"{category_name} budget. "
-                            f"₹{remaining:,.2f} remains."
-                        )
-                    })
-
-        # =====================================
-        # NO DATA
-        # =====================================
-
-        if not insights:
-
-            insights.append({
-                "type": "no_data",
-                "message": (
-                    "Add some income or expense "
-                    "transactions to receive "
-                    "financial insights."
+            budget_data.append({
+                "category": category_name,
+                "budget_limit": float(limit),
+                "spent": float(spent),
+                "remaining": float(
+                    limit - spent
                 )
             })
 
-        # =====================================
-        # FINAL RESPONSE
-        # =====================================
+        # ==================================================
+        # 5. LARGEST TRANSACTIONS
+        # ==================================================
+        # Same financial scope as Dashboard:
+        # all expense transactions.
+
+        largest_transactions = (
+            self.db.query(
+                Transaction,
+                Category.name
+            )
+            .join(
+                Category,
+                Transaction.category_id
+                == Category.id
+            )
+            .filter(
+                Transaction.user_id == user_id,
+                Transaction.type == "expense"
+            )
+            .order_by(
+                Transaction.amount.desc()
+            )
+            .limit(5)
+            .all()
+        )
+
+        largest_transaction_data = []
+
+        for transaction, category_name in (
+            largest_transactions
+        ):
+
+            largest_transaction_data.append({
+                "date": str(transaction.date),
+                "category": category_name,
+                "amount": float(
+                    transaction.amount
+                ),
+                "description": (
+                    transaction.description
+                ),
+                "payment_method": (
+                    transaction.payment_method
+                )
+            })
+
+        # ==================================================
+        # 6. TRANSACTION COUNTS
+        # ==================================================
+        # Same scope as Dashboard:
+        # all transactions.
+
+        expense_count = (
+            self.db.query(
+                func.count(Transaction.id)
+            )
+            .filter(
+                Transaction.user_id == user_id,
+                Transaction.type == "expense"
+            )
+            .scalar()
+        )
+
+        income_count = (
+            self.db.query(
+                func.count(Transaction.id)
+            )
+            .filter(
+                Transaction.user_id == user_id,
+                Transaction.type == "income"
+            )
+            .scalar()
+        )
+
+        # ==================================================
+        # FINAL FINANCIAL DATA
+        # ==================================================
 
         return {
-            "month": f"{data['year']}-{data['month']:02d}",
+
+            "year": year,
+
+            "month": month,
 
             "summary": {
-                "total_income": float(
-                    total_income
-                ),
-                "total_expense": float(
-                    total_expense
-                ),
-                "savings": float(
-                    savings
-                ),
-                "savings_percentage": float(
-                    savings_percentage
-                )
+
+                "total_income":
+                    float(total_income),
+
+                "total_expense":
+                    float(total_expense),
+
+                "savings":
+                    float(savings),
+
+                "savings_percentage":
+                    float(savings_percentage)
             },
 
-            "insights": insights,
+            "category_spending":
+                category_spending,
 
-            "source": "rule_based"
+            "budgets":
+                budget_data,
+
+            "largest_transactions":
+                largest_transaction_data,
+
+            "transaction_counts": {
+
+                "income":
+                    income_count,
+
+                "expense":
+                    expense_count
+            }
         }

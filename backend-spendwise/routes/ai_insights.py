@@ -1,17 +1,16 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-
 from core.database import get_db
 from core.dependency import get_current_user
+from service.ai_insights_service import AIInsightsService
+import traceback
 
-from service.financial_analysis_service import FinancialAnalysisService
+router = APIRouter(prefix="/ai", tags=["AI Insights"])
 
 
-router = APIRouter(
-    prefix="/ai",
-    tags=["AI Insights"]
-)
-
+# ---------------------------------------------------------
+# GET AI INSIGHTS
+# ---------------------------------------------------------
 
 @router.get("/insights")
 def get_ai_insights(
@@ -19,23 +18,67 @@ def get_ai_insights(
     current_user=Depends(get_current_user)
 ):
     try:
-        user_id = current_user.id
 
-        service = FinancialAnalysisService(db)
+        service = AIInsightsService(db)
 
-        insights = service.generate_rule_based_insights(
-            user_id
+        # IMPORTANT:
+        # This only reads saved insights.
+        # It NEVER generates Gemini insights.
+        result = service.get_or_generate_insights(
+            current_user.id
         )
 
         return {
-            "message": "AI financial insights fetched successfully",
-            "data": insights
+            "message": "AI insights retrieved successfully",
+            "data": result
         }
 
     except Exception as e:
-        print("Error in get_ai_insights:", str(e))
+
+        print("ERROR IN GET AI INSIGHTS:")
+        traceback.print_exc()
 
         raise HTTPException(
             status_code=500,
-            detail="Error generating AI financial insights"
+            detail=str(e)
+        )
+
+
+# ---------------------------------------------------------
+# GENERATE AI INSIGHTS
+# ---------------------------------------------------------
+
+@router.post("/insights/generate")
+def generate_ai_insights(
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    try:
+
+
+        service = AIInsightsService(db)
+
+        # IMPORTANT:
+        # This performs hash checking.
+        # Gemini is called ONLY if financial data changed.
+        result = service.generate_if_changed(
+            current_user.id
+        )
+
+        print("AI INSIGHT GENERATION CHECK COMPLETED")
+        print("========================================\n")
+
+        return {
+            "message": "AI financial insights generated successfully",
+            "data": result
+        }
+
+    except Exception as e:
+
+        print("ERROR IN GENERATE AI INSIGHTS:")
+        traceback.print_exc()
+
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
         )
