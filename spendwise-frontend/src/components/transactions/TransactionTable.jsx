@@ -6,7 +6,8 @@ const TransactionTable = ({
   transactions,
   onEdit,
   onDelete,
-  onViewDetails
+  onViewDetails,
+  startIndex = 0
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
@@ -182,10 +183,11 @@ const TransactionTable = ({
 
             <tbody>
               {filteredTransactions.map(
-                (transaction) => (
+                (transaction, index) => (
                   <TransactionRow
                     key={transaction.id}
                     transaction={transaction}
+                    displayId={startIndex + index + 1}
                     onEdit={onEdit}
                     onDelete={onDelete}
                     onViewDetails={onViewDetails}

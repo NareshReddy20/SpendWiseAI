@@ -7,6 +7,7 @@ import {
 
 const TransactionRow = ({
   transaction,
+  displayId,
   onEdit,
   onDelete,
   onViewDetails
@@ -52,7 +53,7 @@ const TransactionRow = ({
   return (
     <tr>
       <td>
-        {transaction.id}
+        {displayId}
       </td>
 
       <td

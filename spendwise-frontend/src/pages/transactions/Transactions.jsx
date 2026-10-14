@@ -403,6 +403,7 @@ const handleEditSubmit = async (e) => {
             onEdit={handleEdit}
             onDelete={handleDelete}
             onViewDetails={handleViewDetails}
+            startIndex={(page - 1) * limit}
           />
 
         )}
